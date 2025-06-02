@@ -8,6 +8,7 @@ from prime_backup.db.access import DbAccess
 from prime_backup.operator import Operator
 
 from mcdreforged.api.all import PluginServerInterface, CommandSource
+from prime_backup.text import RText, RColor, click_and_run, mkcmd, TextComponents
 
 # State for current restore
 restore_state = {'thread': None, 'abort': False}
@@ -42,23 +43,32 @@ def on_load(server: PluginServerInterface, old):
         regions = args[2:]
         def do_restore():
             restore_state['abort'] = False
+            # determine countdown duration (seconds)
+            countdown_sec = config.get('restore_countdown_sec', 10)
             if config.get('create_temp_backup', False):
-                server.execute('say Creating temporary backup before restore...')
+                server.broadcast(RText('!!! ', RColor.yellow) + RText('Creating temporary backup before restore...'))
                 try:
                     temp_id = CreateBackupAction(
                         Operator.literal('RegionRestore'),
                         "Temporary backup before region restore"
                     ).run().id
-                    server.execute(f'say Temporary backup created with id {temp_id}')
+                    server.broadcast(RText(f'Temporary backup created with id {temp_id}', RColor.green))
                 except Exception as e:
-                    server.execute(f'say Temporary backup creation failed: {e}')
+                    server.broadcast(RText(f'Temporary backup creation failed: {e}', RColor.red))
                     return
-            for i in range(10, 0, -1):
+            # countdown before stopping server
+            for countdown in range(max(0, countdown_sec), 0, -1):
                 if restore_state['abort']:
-                    server.execute('say Region restore aborted.')
+                    server.broadcast(RText('!!! ', RColor.red) + RText('Region restore aborted.'))
                     return
-                server.execute(f'say Stopping server in {i} seconds...')
+                # broadcast countdown with clickable abort command
+                server.broadcast(click_and_run(
+                    RText('!!! ', RColor.red) + RText(f'Stopping server in {countdown} seconds...'),
+                    RText('Click to abort', RColor.green),
+                    mkcmd('rr abort'),
+                ))
                 time.sleep(1)
+            # stop the server
             server.execute('stop')
             world_dir = os.getcwd()
             try:
@@ -83,7 +93,7 @@ def on_load(server: PluginServerInterface, old):
                     shutil.move(export_path, final_export_path)
                     export_path = final_export_path
             except Exception as e:
-                server.execute(f'say Export failed: {e}')
+                server.broadcast(RText(f'Export failed: {e}', RColor.red))
                 return
             if dim_folder:
                 base_region_path = os.path.join(world_dir, dim_folder, 'region')
@@ -101,9 +111,9 @@ def on_load(server: PluginServerInterface, old):
                     failed.append(region)
             success = [r for r in regions if r not in failed]
             if success:
-                server.execute(f'say Restored regions: {', '.join(success)} from backup {backup_id}')
+                server.broadcast(RText(f"Restored regions: {', '.join(success)} from backup {backup_id}", RColor.green))
             if failed:
-                server.execute(f'say Failed to restore regions: {', '.join(failed)}')
+                server.broadcast(RText(f"Failed to restore regions: {', '.join(failed)}", RColor.red))
         thread = threading.Thread(target=do_restore, daemon=True)
         restore_state['thread'] = thread
         thread.start()
