@@ -1,0 +1,16 @@
+{
+    "id": "region_restore",
+    "version": "1.0.0",
+    "name": "Region Restore",
+    "description": {
+        "en_us": "A plugin that interfaces with PrimeBackup to restore specific region files from specific backups."
+    },
+    "author": [
+        "Bobisawesome07"
+    ],
+    "link": "https://github.com/High-Tech-Minecraft/RegionRestore",
+    "dependencies": {
+        "mcdreforged": ">=2.12.0"
+    },
+    "archive_name": "RegionRestore-v{version}.pyz"
+}
