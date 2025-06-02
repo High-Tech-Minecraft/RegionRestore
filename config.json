@@ -1,0 +1,13 @@
+{
+    "permission_level": 4,
+    "countdown_seconds": 10,
+    "exports_root": "rr_exports",
+    "create_temp_backup": false,
+    "prefix": "rr",
+    "allowed_dimensions": [
+        "overworld",
+        "nether",
+        "end"
+    ],
+    "logging_enabled": true
+}
