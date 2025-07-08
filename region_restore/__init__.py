@@ -7,7 +7,7 @@ from prime_backup.action.export_backup_action_directory import ExportBackupToDir
 from prime_backup.db.access import DbAccess
 from prime_backup.types.operator import Operator
 
-from mcdreforged.api.all import PluginServerInterface, CommandSource
+from mcdreforged.api.all import PluginServerInterface, CommandSource, Literal
 from prime_backup.mcdr.text_components import RText, RColor, click_and_run, mkcmd, TextComponents
 
 # State for current restore
@@ -22,7 +22,8 @@ except Exception:
     config = {}
 
 def on_load(server: PluginServerInterface, old):
-    def region_command(src: CommandSource, args):
+    def region_command(src: CommandSource, context):
+        args = context.get_remaining_args() if hasattr(context, 'get_remaining_args') else context
         if restore_state['thread'] and restore_state['thread'].is_alive():
             src.reply('A restore is already in progress.')
             return
@@ -119,7 +120,8 @@ def on_load(server: PluginServerInterface, old):
         thread.start()
         src.reply(f'Scheduled restore of backup {backup_id} for regions: {", ".join(regions)}')
 
-    def rr_command(src: CommandSource, args):
+    def rr_command(src: CommandSource, context):
+        args = context.get_remaining_args() if hasattr(context, 'get_remaining_args') else context
         if not args:
             src.reply("RegionRestore commands:\n"
                       "!!rr restore <backup_id> <dimension> <region1> [region2] ... - restore regions\n"
@@ -137,13 +139,6 @@ def on_load(server: PluginServerInterface, old):
         else:
             src.reply(f"Unknown subcommand: {sub}")
 
-    server.register_command(
-        "rr",
-        rr_command,
-        "RegionRestore root command (use without args for help)"
-    )
-    server.register_command(
-        "region",
-        region_command,
-        "Restore specific region files from a backup"
-    )
+    # Register commands using simple callback approach
+    server.register_command(Literal('rr').runs(rr_command))
+    server.register_command(Literal('region').runs(region_command))
