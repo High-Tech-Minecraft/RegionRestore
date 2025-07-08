@@ -8,7 +8,7 @@ from prime_backup.db.access import DbAccess
 from prime_backup.types.operator import Operator
 
 from mcdreforged.api.all import PluginServerInterface, CommandSource
-from prime_backup.text import RText, RColor, click_and_run, mkcmd, TextComponents
+from prime_backup.mcdr.text_components import RText, RColor, click_and_run, mkcmd, TextComponents
 
 # State for current restore
 restore_state = {'thread': None, 'abort': False}
