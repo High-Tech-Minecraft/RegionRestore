@@ -125,7 +125,8 @@ def on_load(server: PluginServerInterface, old):
         if not args:
             src.reply("RegionRestore commands:\n"
                       "!!rr restore <backup_id> <dimension> <region1> [region2] ... - restore regions\n"
-                      "!!rr abort - cancel pending restore countdown")
+                      "!!rr abort - cancel pending restore countdown\n"
+                      "!!rr help - show detailed help")
             return
         sub = args[0].lower()
         if sub == 'restore':
@@ -136,8 +137,38 @@ def on_load(server: PluginServerInterface, old):
                 src.reply('Region restore abort requested.')
             else:
                 src.reply('No restore in progress to abort.')
+        elif sub == 'help':
+            help_text = RText("=== RegionRestore Help ===\n", RColor.gold, bold=True)
+            help_text += RText("\nAvailable Commands:\n", RColor.yellow, bold=True)
+            help_text += RText("!!rr restore <backup_id> <dimension> <region1> [region2] ...\n", RColor.green)
+            help_text += RText("  Restore specific region files from a PrimeBackup backup\n")
+            help_text += RText("  - backup_id: ID of the backup (use !!pb list to see backups)\n")
+            help_text += RText("  - dimension: overworld, nether, or end\n")
+            help_text += RText("  - region1, region2, etc: Region coordinates (e.g. r.0.0, r.1.-1)\n\n")
+            
+            help_text += RText("!!region <backup_id> <dimension> <region1> [region2] ...\n", RColor.green)
+            help_text += RText("  Shortcut command - same as !!rr restore\n\n")
+            
+            help_text += RText("!!rr abort\n", RColor.red)
+            help_text += RText("  Cancel a pending restore during countdown\n\n")
+            
+            help_text += RText("!!rr help\n", RColor.aqua)
+            help_text += RText("  Show this help message\n\n")
+            
+            help_text += RText("Examples:\n", RColor.yellow, bold=True)
+            help_text += RText("!!rr restore 123 overworld r.0.0 r.1.0 r.-1.-1\n", RColor.gray)
+            help_text += RText("!!region 456 nether r.0.0\n", RColor.gray)
+            help_text += RText("!!rr abort\n", RColor.gray)
+            
+            help_text += RText("\nFeatures:\n", RColor.yellow, bold=True)
+            help_text += RText("- Configurable countdown before server restart\n")
+            help_text += RText("- Clickable abort during countdown\n")
+            help_text += RText("- Optional temporary backup before restore\n")
+            help_text += RText("- Multi-region support in single command\n")
+            
+            src.reply(help_text)
         else:
-            src.reply(f"Unknown subcommand: {sub}")
+            src.reply(f"Unknown subcommand: {sub}. Use '!!rr help' for available commands.")
 
     # Register commands using simple callback approach
     server.register_command(Literal('rr').runs(rr_command))
