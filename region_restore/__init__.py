@@ -7,7 +7,7 @@ from prime_backup.action.export_backup_action_directory import ExportBackupToDir
 from prime_backup.db.access import DbAccess
 from prime_backup.types.operator import Operator
 
-from mcdreforged.api.all import PluginServerInterface, CommandSource, Literal
+from mcdreforged.api.all import PluginServerInterface, CommandSource
 from prime_backup.mcdr.text_components import RText, RColor, click_and_run, mkcmd, TextComponents
 
 # State for current restore
@@ -22,8 +22,7 @@ except Exception:
     config = {}
 
 def on_load(server: PluginServerInterface, old):
-    def region_command(src: CommandSource, context):
-        args = context.get_remaining_args() if hasattr(context, 'get_remaining_args') else context
+    def region_command(src: CommandSource, args):
         if restore_state['thread'] and restore_state['thread'].is_alive():
             src.reply('A restore is already in progress.')
             return
@@ -120,8 +119,7 @@ def on_load(server: PluginServerInterface, old):
         thread.start()
         src.reply(f'Scheduled restore of backup {backup_id} for regions: {", ".join(regions)}')
 
-    def rr_command(src: CommandSource, context):
-        args = context.get_remaining_args() if hasattr(context, 'get_remaining_args') else context
+    def rr_command(src: CommandSource, args):
         if not args:
             src.reply("RegionRestore commands:\n"
                       "!!rr restore <backup_id> <dimension> <region1> [region2] ... - restore regions\n"
@@ -170,6 +168,23 @@ def on_load(server: PluginServerInterface, old):
         else:
             src.reply(f"Unknown subcommand: {sub}. Use '!!rr help' for available commands.")
 
-    # Register commands using simple callback approach
-    server.register_command(Literal('rr').runs(rr_command))
-    server.register_command(Literal('region').runs(region_command))
+    # Register commands using event listener method
+    def on_user_info(server_interface: PluginServerInterface, info):
+        if not info.is_user:
+            return
+        
+        content = info.content.strip()
+        if content.startswith('!!rr'):
+            parts = content.split()
+            command = parts[0]  # !!rr
+            args = parts[1:] if len(parts) > 1 else []
+            rr_command(info.source, args)
+            return
+        elif content.startswith('!!region'):
+            parts = content.split()
+            command = parts[0]  # !!region
+            args = parts[1:] if len(parts) > 1 else []
+            region_command(info.source, args)
+            return
+    
+    server.register_event_listener('user_info', on_user_info)
